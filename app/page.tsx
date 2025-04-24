@@ -1,7 +1,8 @@
 "use client"
 
-import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
+import Image from "next/image"
+import { twMerge as cn } from "tailwind-merge"
 import {
   Card,
   CardContent,
@@ -79,6 +80,9 @@ function formatResult(result: any) {
   }
 }
 
+const placeholder =
+  "quality: high size: 1024x1024 text input: 39t image input: 323t output: 4,160t"
+
 export default function Home() {
   const [snippet, setSnippet] = useState("")
   const [textTokens, setTextTokens] = useState<number | "">("")
@@ -146,12 +150,11 @@ export default function Home() {
   useEffect(() => {
     if (result) {
       if (resultRef.current) {
+        const yOffset = 50
+        const element = resultRef.current
+        const y = element.getBoundingClientRect().bottom + yOffset
 
-        const yOffset = 50;
-        const element = resultRef.current;
-        const y = element.getBoundingClientRect().bottom + yOffset;
-
-        window.scrollTo({ top: y, behavior: 'smooth' });
+        window.scrollTo({ top: y, behavior: "smooth" })
       }
     }
   }, [result])
@@ -184,12 +187,15 @@ export default function Home() {
     }
   }
 
-  const placeholder =
-    "quality: high size: 1024x1024 text input: 39t image input: 323t output: 4,160t"
-
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-24 bg-gray-50">
-      <Card className="w-full max-w-4xl">
+    <main
+      className={cn(
+        "flex min-h-screen flex-col items-center justify-center p-4 bg-gray-50",
+        "md:p-24",
+        "dark:bg-gray-900"
+      )}
+    >
+      <Card className={cn("w-full max-w-4xl rounded-2xl", "dark:bg-gray-800")}>
         <CardHeader>
           <CardTitle className="text-2xl">
             OpenAI Image Generation Cost Calculator
@@ -315,9 +321,10 @@ export default function Home() {
           {result && (
             <Card
               ref={resultRef}
-              className={
-                "bg-green-50 border-green-800/20 shadow-xl text-green-800 p-6 space-y-2"
-              }
+              className={cn(
+                "bg-green-50 border-green-800/20 shadow-xl text-green-800 p-6 space-y-2",
+                "dark:bg-green-900/50 dark:border-green-500/20 dark:text-green-200"
+              )}
             >
               <CardTitle className="text-xl font-light mb-2">
                 Cost Breakdown
@@ -325,9 +332,10 @@ export default function Home() {
               <table className={"w-full"}>
                 <thead>
                   <tr
-                    className={
-                      "border-b-[1px] border-green-800/10 text-sm opacity-75"
-                    }
+                    className={cn(
+                      "border-b-[1px] border-green-800/10 text-sm opacity-75",
+                      "dark:border-green-300/20"
+                    )}
                   >
                     <th className={"font-normal text-left py-1.5 pb-2 w-2/3"}>
                       Type
@@ -373,9 +381,10 @@ export default function Home() {
                   </tr>
 
                   <tr
-                    className={
-                      "text-lg font-bold text-green-900 border-t-[1px] border-green-800/10"
-                    }
+                    className={cn(
+                      "text-lg font-bold text-green-900 border-t-[1px] border-green-800/20",
+                      "dark:text-green-50 dark:border-green-200/20"
+                    )}
                   >
                     <td className={"py-1.5 pt-3"}>Total</td>
                     <td className={"text-right py-1.5"}></td>
