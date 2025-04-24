@@ -1,13 +1,11 @@
 "use client"
 
-import type React from "react"
 import Image from "next/image"
-import { useState, useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle
 } from "@/components/ui/card"
@@ -92,6 +90,8 @@ export default function Home() {
   const result = calculateResult({ textTokens, outputTokens, imageTokens })
   const formatted = formatResult(result)
 
+  const resultRef = useRef<HTMLDivElement>(null)
+
   // Parse snippet when it changes
   useEffect(() => {
     if (!snippet.trim()) {
@@ -142,6 +142,19 @@ export default function Home() {
       setIsParsingFromSnippet(false)
     }
   }
+
+  useEffect(() => {
+    if (result) {
+      if (resultRef.current) {
+
+        const yOffset = 50;
+        const element = resultRef.current;
+        const y = element.getBoundingClientRect().bottom + yOffset;
+
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }
+  }, [result])
 
   // Update snippet when token inputs change manually
   useEffect(() => {
@@ -301,6 +314,7 @@ export default function Home() {
 
           {result && (
             <Card
+              ref={resultRef}
               className={
                 "bg-green-50 border-green-800/20 shadow-xl text-green-800 p-6 space-y-2"
               }
@@ -310,8 +324,14 @@ export default function Home() {
               </CardTitle>
               <table className={"w-full"}>
                 <thead>
-                  <tr className={"border-b-[1px] border-green-800/10 text-sm opacity-75"}>
-                    <th className={"font-normal text-left py-1.5 pb-2 w-2/3"}>Type</th>
+                  <tr
+                    className={
+                      "border-b-[1px] border-green-800/10 text-sm opacity-75"
+                    }
+                  >
+                    <th className={"font-normal text-left py-1.5 pb-2 w-2/3"}>
+                      Type
+                    </th>
                     <th className={"font-normal text-right py-1.5"}>Tokens</th>
                     <th className={"font-normal text-right py-1.5"}>Cost</th>
                   </tr>
@@ -352,7 +372,11 @@ export default function Home() {
                     <td colSpan={3} className={"p-1"}></td>
                   </tr>
 
-                  <tr className={"text-lg font-bold text-green-900 border-t-[1px] border-green-800/10"}>
+                  <tr
+                    className={
+                      "text-lg font-bold text-green-900 border-t-[1px] border-green-800/10"
+                    }
+                  >
                     <td className={"py-1.5 pt-3"}>Total</td>
                     <td className={"text-right py-1.5"}></td>
                     <td className={"text-right py-1.5"}>
