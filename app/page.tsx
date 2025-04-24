@@ -3,14 +3,83 @@
 import type React from "react"
 import Image from "next/image"
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, Info } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from "@/components/ui/popover"
+
+interface Values {
+  textTokens?: string | number
+  imageTokens?: string | number
+  outputTokens?: string | number
+}
+
+// Calculate result based on token values
+function calculateResult(values: Values) {
+  const { textTokens, imageTokens, outputTokens } = values
+  if (textTokens === "" || imageTokens === "" || outputTokens === "") {
+    return null
+  }
+
+  const million = Math.pow(10, 6)
+
+  const textCost = (Number(textTokens) / million) * 5.0
+  const imageCost = (Number(imageTokens) / million) * 10.0
+  const outputCost = (Number(outputTokens) / million) * 40.0
+  const totalCost = textCost + imageCost + outputCost
+
+  return {
+    textTokens: Number(textTokens),
+    imageTokens: Number(imageTokens),
+    outputTokens: Number(outputTokens),
+    textCost,
+    imageCost,
+    outputCost,
+    totalCost
+  }
+}
+
+function formatCost(cost: number) {
+  return `$${cost.toFixed(6)}`
+}
+
+function formatResult(result: any) {
+  if (!result) {
+    return null
+  }
+  return {
+    text: {
+      tokens: result.textTokens.toLocaleString(),
+      cost: formatCost(result.textCost)
+    },
+    image: {
+      tokens: result.imageTokens.toLocaleString(),
+      cost: formatCost(result.imageCost)
+    },
+    output: {
+      tokens: result.outputTokens.toLocaleString(),
+      cost: formatCost(result.outputCost)
+    },
+    total: {
+      cost: formatCost(result.totalCost)
+    }
+  }
+}
 
 export default function Home() {
   const [snippet, setSnippet] = useState("")
@@ -20,29 +89,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [isParsingFromSnippet, setIsParsingFromSnippet] = useState(false)
 
-  // Calculate result based on current token values
-  const calculateResult = () => {
-    if (textTokens === "" || imageTokens === "" || outputTokens === "") {
-      return null
-    }
-
-    const textCost = (Number(textTokens) / 1000000) * 5.0
-    const imageCost = (Number(imageTokens) / 1000000) * 10.0
-    const outputCost = (Number(outputTokens) / 1000000) * 40.0
-    const totalCost = textCost + imageCost + outputCost
-
-    return {
-      textTokens: Number(textTokens),
-      imageTokens: Number(imageTokens),
-      outputTokens: Number(outputTokens),
-      textCost,
-      imageCost,
-      outputCost,
-      totalCost,
-    }
-  }
-
-  const result = calculateResult()
+  const result = calculateResult({ textTokens, outputTokens, imageTokens })
+  const formatted = formatResult(result)
 
   // Parse snippet when it changes
   useEffect(() => {
@@ -76,7 +124,9 @@ export default function Home() {
       const outputMatch = snippet.match(/output: ([\d,]+)t/)
 
       if (!textMatch || !imageMatch || !outputMatch) {
-        throw new Error("Could not parse all required token information from the snippet")
+        throw new Error(
+          "Could not parse all required token information from the snippet"
+        )
       }
 
       // Extract token counts
@@ -84,7 +134,9 @@ export default function Home() {
       setImageTokens(Number.parseInt(imageMatch[1]))
       setOutputTokens(Number.parseInt(outputMatch[1].replace(/,/g, "")))
     } catch (err) {
-      setError("Failed to parse the snippet. Please ensure it follows the expected format.")
+      setError(
+        "Failed to parse the snippet. Please ensure it follows the expected format."
+      )
       console.error(err)
     } finally {
       setIsParsingFromSnippet(false)
@@ -99,21 +151,16 @@ export default function Home() {
     // Only update if all values are present
     if (textTokens !== "" && imageTokens !== "" && outputTokens !== "") {
       const formattedOutput = Number(outputTokens).toLocaleString()
-      const newSnippet = `quality: high
-size: 1024x1024
-text input: ${textTokens}t
-image input: ${imageTokens}t
-output: ${formattedOutput}t`
+      const newSnippet = `quality: high size: 1024x1024 text input: ${textTokens}t image input: ${imageTokens}t output: ${formattedOutput}t`
 
       setSnippet(newSnippet)
     }
   }, [textTokens, imageTokens, outputTokens, isParsingFromSnippet])
 
-  const formatCost = (cost: number) => {
-    return `$${cost.toFixed(6)}`
-  }
-
-  const handleTokenInputChange = (value: string, setter: React.Dispatch<React.SetStateAction<number | "">>) => {
+  const handleTokenInputChange = (
+    value: string,
+    setter: React.Dispatch<React.SetStateAction<number | "">>
+  ) => {
     if (value === "") {
       setter("")
     } else {
@@ -124,17 +171,25 @@ output: ${formattedOutput}t`
     }
   }
 
+  const placeholder =
+    "quality: high size: 1024x1024 text input: 39t image input: 323t output: 4,160t"
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-24 bg-gray-50">
       <Card className="w-full max-w-4xl">
         <CardHeader>
-          <CardTitle className="text-2xl">OpenAI Image Generation Cost Calculator</CardTitle>
-          <CardDescription>Paste your OpenAI image generation snippet or manually enter token counts</CardDescription>
+          <CardTitle className="text-2xl">
+            OpenAI Image Generation Cost Calculator
+          </CardTitle>
+          <CardDescription>
+            Paste your OpenAI image generation snippet or manually enter token
+            counts
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col gap-4">
             {/* Snippet Input */}
-            <div className="w-full md:w-1/2">
+            <div className="w-full">
               <div className="flex items-center justify-between mb-2">
                 <Label htmlFor="snippet" className="block text-sm font-medium">
                   Copy from Open AI Playground and paste here:
@@ -150,7 +205,8 @@ output: ${formattedOutput}t`
                     <div className="space-y-2">
                       <h3 className="font-medium">Example Snippet</h3>
                       <p className="text-sm text-muted-foreground">
-                        Look for this information in the OpenAI Playground after generating an image:
+                        Look for this information in the OpenAI Playground after
+                        generating an image:
                       </p>
                       <div className="rounded-md overflow-hidden border">
                         <Image
@@ -165,13 +221,10 @@ output: ${formattedOutput}t`
                   </PopoverContent>
                 </Popover>
               </div>
+
               <Textarea
                 id="snippet"
-                placeholder="quality: high
-size: 1024x1024
-text input: 39t
-image input: 323t
-output: 4,160t"
+                placeholder={placeholder}
                 rows={6}
                 value={snippet}
                 onChange={(e) => setSnippet(e.target.value)}
@@ -180,47 +233,59 @@ output: 4,160t"
             </div>
 
             {/* Manual Token Inputs */}
-            <div className="w-full md:w-1/2 space-y-4">
-              <Label className="block text-sm font-medium mb-2">Or enter token counts manually:</Label>
+            <div className="w-full space-y-4">
+              <Label className="block text-sm font-medium">
+                Or enter token counts manually:
+              </Label>
 
-              <div className="space-y-3">
-                <div className="space-y-1">
+              <div className="flex w-full flex-col md:flex-row gap-2 md:gap-6">
+                <div className="space-y-1 w-full">
                   <Label htmlFor="textTokens">Text Input Tokens:</Label>
                   <Input
                     id="textTokens"
                     type="number"
                     min="0"
                     value={textTokens}
-                    onChange={(e) => handleTokenInputChange(e.target.value, setTextTokens)}
+                    onChange={(e) =>
+                      handleTokenInputChange(e.target.value, setTextTokens)
+                    }
                     placeholder="e.g., 39"
                   />
-                  <p className="text-xs text-gray-500">$5.00 per million tokens</p>
+                  <p className="text-xs text-gray-500">
+                    $5.00 per million tokens
+                  </p>
                 </div>
-
-                <div className="space-y-1">
+                <div className="space-y-1 w-full">
                   <Label htmlFor="imageTokens">Image Input Tokens:</Label>
                   <Input
                     id="imageTokens"
                     type="number"
                     min="0"
                     value={imageTokens}
-                    onChange={(e) => handleTokenInputChange(e.target.value, setImageTokens)}
+                    onChange={(e) =>
+                      handleTokenInputChange(e.target.value, setImageTokens)
+                    }
                     placeholder="e.g., 323"
                   />
-                  <p className="text-xs text-gray-500">$10.00 per million tokens</p>
+                  <p className="text-xs text-gray-500">
+                    $10.00 per million tokens
+                  </p>
                 </div>
-
-                <div className="space-y-1">
+                <div className="space-y-1 w-full">
                   <Label htmlFor="outputTokens">Output Tokens:</Label>
                   <Input
                     id="outputTokens"
                     type="number"
                     min="0"
                     value={outputTokens}
-                    onChange={(e) => handleTokenInputChange(e.target.value, setOutputTokens)}
+                    onChange={(e) =>
+                      handleTokenInputChange(e.target.value, setOutputTokens)
+                    }
                     placeholder="e.g., 4,160"
                   />
-                  <p className="text-xs text-gray-500">$40.00 per million tokens</p>
+                  <p className="text-xs text-gray-500">
+                    $40.00 per million tokens
+                  </p>
                 </div>
               </div>
             </div>
@@ -235,51 +300,67 @@ output: 4,160t"
           )}
 
           {result && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Cost Breakdown</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="text-sm font-medium">Text Tokens:</div>
-                    <div className="text-sm">{result.textTokens.toLocaleString()} tokens</div>
+            <Card
+              className={
+                "bg-green-50 border-green-800/20 shadow-xl text-green-800 p-6 space-y-2"
+              }
+            >
+              <CardTitle className="text-xl font-light mb-2">
+                Cost Breakdown
+              </CardTitle>
+              <table className={"w-full"}>
+                <thead>
+                  <tr className={"border-b-[1px] border-green-800/10 text-sm opacity-75"}>
+                    <th className={"font-normal text-left py-1.5 pb-2 w-2/3"}>Type</th>
+                    <th className={"font-normal text-right py-1.5"}>Tokens</th>
+                    <th className={"font-normal text-right py-1.5"}>Cost</th>
+                  </tr>
+                </thead>
 
-                    <div className="text-sm font-medium">Image Tokens:</div>
-                    <div className="text-sm">{result.imageTokens.toLocaleString()} tokens</div>
+                <tbody className={"text-sm"}>
+                  <tr>
+                    <td className={"py-1.5 pt-3"}>Text</td>
+                    <td className={"text-right py-1.5"}>
+                      {formatted?.text.tokens}
+                    </td>
+                    <td className={"text-right py-1.5"}>
+                      {formatted?.text.cost}
+                    </td>
+                  </tr>
 
-                    <div className="text-sm font-medium">Output Tokens:</div>
-                    <div className="text-sm">{result.outputTokens.toLocaleString()} tokens</div>
-                  </div>
+                  <tr>
+                    <td className={"py-1.5"}>Image</td>
+                    <td className={"text-right py-1.5"}>
+                      {formatted?.image.tokens}
+                    </td>
+                    <td className={"text-right py-1.5"}>
+                      {formatted?.image.cost}
+                    </td>
+                  </tr>
 
-                  <div className="border-t pt-2 mt-2">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="text-sm font-medium">Text Cost:</div>
-                      <div className="text-sm">
-                        {formatCost(result.textCost)} <span className="text-gray-500 text-xs">($5.00 per million)</span>
-                      </div>
+                  <tr>
+                    <td className={"py-1.5"}>Output</td>
+                    <td className={"text-right py-1.5"}>
+                      {formatted?.output.tokens}
+                    </td>
+                    <td className={"text-right py-1.5"}>
+                      {formatted?.output.cost}
+                    </td>
+                  </tr>
 
-                      <div className="text-sm font-medium">Image Cost:</div>
-                      <div className="text-sm">
-                        {formatCost(result.imageCost)}{" "}
-                        <span className="text-gray-500 text-xs">($10.00 per million)</span>
-                      </div>
+                  <tr>
+                    <td colSpan={3} className={"p-1"}></td>
+                  </tr>
 
-                      <div className="text-sm font-medium">Output Cost:</div>
-                      <div className="text-sm">
-                        {formatCost(result.outputCost)}{" "}
-                        <span className="text-gray-500 text-xs">($40.00 per million)</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="border-t bg-gray-50">
-                <div className="flex justify-between w-full">
-                  <div className="font-semibold">Total Cost:</div>
-                  <div className="font-semibold">{formatCost(result.totalCost)}</div>
-                </div>
-              </CardFooter>
+                  <tr className={"text-lg font-bold text-green-900 border-t-[1px] border-green-800/10"}>
+                    <td className={"py-1.5 pt-3"}>Total</td>
+                    <td className={"text-right py-1.5"}></td>
+                    <td className={"text-right py-1.5"}>
+                      {formatted?.total.cost}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </Card>
           )}
         </CardContent>
